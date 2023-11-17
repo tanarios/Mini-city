@@ -79,30 +79,48 @@ ruta = caminos['iglesia']
 
 #ev3.speaker.say('Padre nuestro que estás en el cielo, santificado sea tu Nombre; venga a nosotros tu Reino; hágase tu voluntad  en la tierra como en el cielo. Danos hoy  nuestro pan de cada día; perdona nuestras ofensas, como también nosotros perdonamos  a los que nos ofenden; no nos dejes caer en la tentación, y líbranos del mal. Amén.')
 
+#sigue la linea hasta topar un cuadro blanco
+def seguir_linea():
+    velocidad = 100
+    Cuadro_blanco = 60
+
+    robot.drive(velocidad, 0)
+    #sigue la linea negra 
+    wait(1000) #espera un seg
+
+    while color_sensor.reflection() < Cuadro_blanco:
+        wait (10) #aca espera un toque para comprobar el color
+
+    robot.stop()
+
+
+def girar(direccion):
+    velocidad_giro = 100
+    tiempo_giro = 1000
+    if direccion == "izquierda":
+        robot.drive_time(0, -velocidad_giro, tiempo_giro)
+    elif direccion == "derecha":
+        robot.drive_time(0, velocidad_giro, tiempo_giro)
+
+    wait(1000)
+    robot.stop()
+
 def mover_a(ruta):
-    VELOCIDAD = 100  
-    CUADRO_BLANCO = 60  
+    for i in range(len(ruta)-1):
+        seguir_linea()
 
-    # Mover el robot a lo largo de la ruta
-    for nodo in ruta:
-        # Mover el robot a lo largo de la línea negra
-        robot.drive(VELOCIDAD, 0)
+        if i !=len(ruta) -2:
+            #aca se calcula la direccion que debe girar
+            nodo_actual = ruta[i]
+            proximo_nodo = ruta[i+1]
+            diferencia_x = ubicaciones[proximo_nodo][0] - ubicaciones[nodo_actual][0]
 
-        # Esperar un poco para salir del cuadro blanco inicial
-        wait(500)  # Esperar medio segundo
-
-        # Esperar hasta que el robot detecte un cuadro blanco
-        while color_sensor.reflection() < CUADRO_BLANCO:
-            wait(10)  # Esperar un poco antes de comprobar de nuevo
-
-        # Detener el robot
-        robot.stop()
-
-        # Si este no es el último nodo, esperar un poco antes de continuar
-        if nodo != ruta[-1]:
-            wait(2000)  # Esperar 2 segundos
-
-
+            if diferencia_x > 0:
+                direccion = "derecha"
+            else:
+                direccion = "izquierda"
+            #aca gira a donde debe
+            girar(direccion)
 
 # Llamar a la función mover_a con la ruta
 mover_a(ruta)
