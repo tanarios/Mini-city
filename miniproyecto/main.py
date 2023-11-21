@@ -22,24 +22,54 @@ robot = DriveBase(left_motor, right_motor, wheel_diameter=55.5, axle_track=104)
 # Write your program here.
 
 # Definir las conexiones y pesos para cada punto
-inicio_conexiones = {"policia": 5}
-policia_conexiones = {"inicio": 5, "iglesia": 10, "museo": 5}
-iglesia_conexiones = {"policia": 10, "museo": 2}
-museo_conexiones = {"iglesia": 2, "policia": 5}
+inicio_conexiones = {"bomberos": 1}
+bomberos_conexiones = {"inicio": 1, "museo": 2, "policia": 2, "iglesia": 1}
+museo_conexiones = {"bomberos": 2, "restaurante": 1}
+restaurante_conexiones = {"museo": 1, "iglesia": 3, "gasolinera": 1}
+gasolinera_conexiones = {"restaurante": 1, "parque": 2, "centro_comercial": 1}
+centro_comercial_conexiones = {"gasolinera": 1, "gym": 1}
+gym_conexiones = {"centro_comercial": 1, "parque": 3, "hotel": 1}
+parque_conexiones = {"gym": 3, "gasolinera": 2, "iglesia": 3, "colegio": 3}
+iglesia_conexiones = {"parque": 3, "restaurante": 3, "bomberos": 1, "municipalidad": 2}
+municipalidad_conexiones = {"iglesia": 2, "colegio": 2, "policia": 2}
+policia_conexiones = {"municipalidad": 2, "bomberos": 2}
+hotel_conexiones = {"gym": 1, "colegio": 1}
+colegio_conexiones = {"hotel": 1, "parque": 3, "municipalidad": 2}
+
 
 # Definir el grafo
 City = {
     "inicio": inicio_conexiones,
+    "bomberos": bomberos_conexiones,
+    "museo": museo_conexiones,
+    "restaurante": restaurante_conexiones,
+    "gasolinera": gasolinera_conexiones,
+    "centro_comercial": centro_comercial_conexiones,
+    "gym": gym_conexiones,
+    "parque": parque_conexiones,
     "iglesia": iglesia_conexiones,
+    "municipalidad": municipalidad_conexiones,
     "policia": policia_conexiones,
-    "museo": museo_conexiones
+    "hotel": hotel_conexiones,
+    "colegio": colegio_conexiones
+
 }
 # Aca se ponen las coordenas de cada punto 
 ubicaciones={
     "inicio": (0,0),
-    "policia": (0,1),
-    "museo": (-1,2),
-    "iglesia":(1,2)
+    "bomberos": (0,1),
+    "museo": (-1,1),
+    "restaurante": (-1,2),
+    "gasolinera": (-1,3),
+    "centro_comercial": (-1,4),
+    "gym": (0,4),
+    "parque": (0,3),
+    "iglesia": (0,2),
+    "municipalidad": (1,2),
+    "policia": (1,1),
+    "hotel": (1,4),
+    "colegio": (1,3)
+
 }
 
 # Definir la funcion de dijkstra para encontrar la ruta mas corta
@@ -68,14 +98,6 @@ def dijkstra(grafo, inicio):
 
     return distancias, caminos
 
-#aca llama la funcion y le pasa el grafo y el nodo que se seleecione
-distancias, caminos = dijkstra(City, 'inicio')
-
-# Imprimir las distancias del nodo que se eligio y el camino mas corto de nodo que se elige 
-print(distancias)
-print(caminos['iglesia'])
-#aca se guarda la ruta mas corta en ruta para poder usarla en el robot
-ruta = caminos['iglesia']
 
 #ev3.speaker.say('Padre nuestro que estás en el cielo, santificado sea tu Nombre; venga a nosotros tu Reino; hágase tu voluntad  en la tierra como en el cielo. Danos hoy  nuestro pan de cada día; perdona nuestras ofensas, como también nosotros perdonamos  a los que nos ofenden; no nos dejes caer en la tentación, y líbranos del mal. Amén.')
 
@@ -89,38 +111,78 @@ def seguir_linea():
     wait(1000) #espera un seg
 
     while color_sensor.reflection() < Cuadro_blanco:
-        wait (10) #aca espera un toque para comprobar el color
+        
+        wait (1000) #aca espera un toque para comprobar el color
 
     robot.stop()
 
 
 def girar(direccion):
     velocidad_giro = 100
-    tiempo_giro = 1000
+    tiempo_giro = 1500
     if direccion == "izquierda":
         robot.drive_time(0, -velocidad_giro, tiempo_giro)
     elif direccion == "derecha":
         robot.drive_time(0, velocidad_giro, tiempo_giro)
+    elif direccion == "arriba":
+        robot.drive_time(velocidad_giro, 0, tiempo_giro)
+    elif direccion == "abajo":
+        robot.drive_time(-velocidad_giro, 0, tiempo_giro)
+
 
     wait(1000)
     robot.stop()
 
 def mover_a(ruta):
-    for i in range(len(ruta)-1):
+    for i in range(len(ruta) - 1):
         seguir_linea()
+        ev3.speaker.say(ruta[i])
+        ev3.speaker.beep()
 
-        if i !=len(ruta) -2:
-            #aca se calcula la direccion que debe girar
-            nodo_actual = ruta[i]
-            proximo_nodo = ruta[i+1]
-            diferencia_x = ubicaciones[proximo_nodo][0] - ubicaciones[nodo_actual][0]
+        # Calcular la dirección que debe girar
+        nodo_actual = ruta[i]
+        proximo_nodo = ruta[i+1]
+        diferencia_x = ubicaciones[proximo_nodo][0] - ubicaciones[nodo_actual][0]
+        diferencia_y = ubicaciones[proximo_nodo][1] - ubicaciones[nodo_actual][1]
 
-            if diferencia_x > 0:
-                direccion = "derecha"
-            else:
-                direccion = "izquierda"
-            #aca gira a donde debe
+        if diferencia_x > 0:
+            direccion = 'derecha'
             girar(direccion)
+            print(ruta[i], direccion)
 
+        elif diferencia_x < 0:
+            direccion = 'izquierda'
+            girar(direccion)
+            print (ruta[i], direccion)
+                
+        
+        elif diferencia_x  == 0:
+
+            if diferencia_y > 0:
+                direccion = 'izquierda'  # Girar a la izquierda para moverse hacia abajo en el mapa
+                girar(direccion)
+                print (ruta[i], direccion)
+
+            elif diferencia_y < 0:
+                direccion = 'derecha'  # Girar a la derecha para moverse hacia arriba en el mapa
+                girar(direccion)
+                print (ruta[i], direccion)
+
+    # Para el último nodo
+    seguir_linea()
+    ev3.speaker.say(ruta[-1])
+    ev3.speaker.beep()
+
+        
 # Llamar a la función mover_a con la ruta
+
+#aca llama la funcion y le pasa el grafo y el nodo que se seleecione
+#se pone donde quiere iniciar
+distancias, caminos = dijkstra(City, 'inicio')
+
+# Imprimir las distancias del nodo que se eligio y el camino mas corto de nodo que se elige 
+print(distancias)
+print(caminos['gasolinera'])
+#aca se guarda la ruta mas corta en ruta para poder usarla en el robot y se pone hasta donde quiere llegar
+ruta = caminos['gasolinera']
 mover_a(ruta)
